@@ -2,28 +2,25 @@
 <html>
     <head>
         <title>EmulatorJS</title>
-
         <link rel = icon href = docs/favicon.ico sizes = "16x16 32x32 48x48 64x64" type = image/vnd.microsoft.icon>
         <meta name = viewport content = "width = device-width, initial-scale = 1">
-
         <style>
-            body, html {
+             body, html {
                 height: 100%;
+                background-color: black;
+                color: white;
             }
 
             body {
-                font-family: monospace;
-                font-weight: bold;
-                font-size: 20px;
                 margin: 0;
                 overflow: hidden;
-                background-color: #222
             }
 
-            body, #box {
+            body, #box, #top {
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                flex-direction: column;
             }
 
             #box {
@@ -38,7 +35,11 @@
                 position: relative;
                 flex-direction: column;
                 transition-duration: 0.2s;
-                overflow: hidden
+                overflow: hidden;
+                font-family: monospace;
+                font-weight: bold;
+                font-size: 20px;
+                margin: 5px;
             }
 
             #box:hover, #box[drag] {
@@ -81,18 +82,55 @@
                 background-color: #666;
                 color: #ddd
             }
+
+            .logo {
+                width: 130px;
+                height: 130px;
+                filter: drop-shadow(0 0 10px white);
+            }
+
+            #top {
+                margin: 5px;
+            }
         </style>
     </head>
 
     <body>
+        <div id="top">
+            <h1>EmulatorJS Demo</h1>
+            <img src="docs/Logo-light.png" alt="Logo" class="logo">
+        </div>
         <div id = box>
             <input type = file id = input>
             Drag ROM file or click here
         </div>
 
         <script>
+            let enableDebug = false;
+            let enableThreads = false;
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            if (urlParams.get('debug') == 1) {
+                enableDebug = true;
+                console.log("Debug is enabled");
+            } else {
+                console.log("Debug is disabled");
+            }
+
+            if (urlParams.get('threads') == 1) {
+                if (window.SharedArrayBuffer) {
+                    enableThreads = true;
+                    console.log("Threads are enabled");
+                } else {
+                    console.warn("Threads are disabled as SharedArrayBuffer is not available. Threads requires two headers to be set when sending you html page. See https://stackoverflow.com/a/68630724");
+                    console.log("Threads are disabled");
+                }
+            } else {
+                console.log("Threads are disabled");
+            }
+            
             input.onchange = async () => {
-                const url = new Blob([input.files[0]])
+                const url = input.files[0]
                 const parts = input.files[0].name.split(".")
 
                 const core = await (async (ext) => {
@@ -118,13 +156,13 @@
                         return "coleco"
 
                     if (["d64"].includes(ext))
-                        return "vice_x64"
+                        return "vice_x64sc"
 
                     if (["nds", "gba", "gb", "z64", "n64"].includes(ext))
                         return ext
 
                     return await new Promise(resolve => {
-                        const cores = {
+                        var coreValues = {
                             "Nintendo 64": "n64",
                             "Nintendo Game Boy": "gb",
                             "Nintendo Game Boy Advance": "gba",
@@ -143,13 +181,26 @@
                             "Sega Saturn": "segaSaturn",
                             "Atari 7800": "atari7800",
                             "Atari 2600": "atari2600",
+                            "Arcade": "arcade",
                             "NEC TurboGrafx-16/SuperGrafx/PC Engine": "pce",
                             "NEC PC-FX": "pcfx",
                             "SNK NeoGeo Pocket (Color)": "ngp",
                             "Bandai WonderSwan (Color)": "ws",
                             "ColecoVision": "coleco",
-                            "Commodore 64": "vice_x64"
+                            "Commodore 64": "vice_x64sc",
+                            "Commodore 128": "vice_x128",
+                            "Commodore VIC20": "vice_xvic",
+                            "Commodore Plus/4": "vice_xplus4",
+                            "Commodore PET": "vice_xpet"
                         }
+
+                        const cores = Object.keys(coreValues).sort().reduce(
+                            (obj, key) => { 
+                                obj[key] = coreValues[key]; 
+                                return obj;
+                            }, 
+                            {}
+                        );
 
                         const button = document.createElement("button")
                         const select = document.createElement("select")
@@ -178,6 +229,8 @@
                 sub.id = "game"
                 div.id = "display"
 
+                const top = document.getElementById("top");
+                top.remove();
                 box.remove()
                 div.appendChild(sub)
                 document.body.appendChild(div)
@@ -189,27 +242,12 @@
                 window.EJS_core = core;
                 window.EJS_pathtodata = "data/";
                 window.EJS_startOnLoaded = true;
+                window.EJS_DEBUG_XX = enableDebug;
+                window.EJS_disableDatabases = true;
+                window.EJS_threads = enableThreads;
 
-                if (window.location.hostname === "demo.emulatorjs.org") {
-                    window.EJS_AdUrl = "https://ads.emulatorjs.org/";
-                    window.EJS_ready = function() {
-                        detectAdBlock("data:text/html;base64,PGh0bWw+PHN0eWxlPiNhZGJsb2Nre2JhY2tncm91bmQtY29sb3I6cmdiYSgwLDAsMCwuOCk7cG9zaXRpb246Zml4ZWQ7d2lkdGg6MTAwJTtoZWlnaHQ6MTAwJTt0b3A6MDtsZWZ0OjA7ei1pbmRleDoxMDAwO3RleHQtYWxpZ246Y2VudGVyO2NvbG9yOiNmZmZ9Ym9keSxodG1se2JhY2tncm91bmQtY29sb3I6dHJhbnNwYXJlbnR9PC9zdHlsZT48Ym9keSBzdHlsZT0ibWFyZ2luOjAiPjxkaXYgaWQ9ImFkYmxvY2siPjxoMT5IaSBBZGJsb2NrIFVzZXIhPC9oMT48cD5BZHMgb24gdGhpcyBwYWdlIG1heSBjb21lIGFuZCBnbyBkZXBlbmRpbmcgb24gaG93IG1hbnkgcGVvcGxlIGFyZSBmdW5kaW5nIHRoaXMgcHJvamVjdC48YnI+WW91IGNhbiBoZWxwIGZ1bmQgdGhpcyBwcm9qZWN0IG9uPGEgaHJlZj0iaHR0cHM6Ly9wYXRyZW9uLmNvbS9FbXVsYXRvckpTIj5wYXRyZW9uPC9hPjwvcD48L2Rpdj48L2JvZHk+PC9odG1sPg==");
-                    }
-                }
-                
                 script.src = "data/loader.js";
                 document.body.appendChild(script);
-            }
-            function detectAdBlock(url) {
-                let adBlockEnabled = false;
-                try {
-                    window.EJS_AdUrl = document.querySelector('iframe[src="'+window.EJS_AdUrl+'"]').src;
-                } catch (e) {
-                    adBlockEnabled = true;
-                }
-                if (adBlockEnabled) {
-                    window.EJS_adBlocked(url);
-                }
             }
             box.ondragover = () => box.setAttribute("drag", true);
             box.ondragleave = () => box.removeAttribute("drag");

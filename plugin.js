@@ -8,7 +8,7 @@ import { getMultimodalCaption } from '../../shared.js';
 
 const gameStore = new localforage.createInstance({ name: 'SillyTavern_EmulatorJS' });
 const baseUrl = '/scripts/extensions/third-party/SillyTavern-EmulatorJS/plugin.html';
-const docUrl = 'https://github.com/Cohee1207/SillyTavern-EmulatorJS/tree/main/docs/Systems';
+const docUrl = 'https://emulatorjs.org/docs4devs/cores';
 const canvas = new OffscreenCanvas(512, 512);
 
 let currentGame = '';
