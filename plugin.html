@@ -39,6 +39,17 @@
             };
             // window.EJS_DEBUG_XX = true;
 
+            // Workaround for not loading the settings on game start. Will be fixed in the next EJS release.
+            window.EJS_onGameStart = function(e) {
+                if (!window.EJS_emulator || !window.EJS_emulator.settings || !window.EJS_emulator.changeSettingOption) {
+                    return;
+                }
+                const saveStateLocation = ['save-state-location'];
+                if (saveStateLocation) {
+                    window.EJS_emulator.changeSettingOption('save-state-location', saveStateLocation);
+                }
+            }
+
             const script = document.createElement("script");
             script.src = "data/loader.js";
             document.body.appendChild(script);
