@@ -44,12 +44,17 @@ const cores = {
     'Sega Saturn': 'segaSaturn',
     'Atari 7800': 'atari7800',
     'Atari 2600': 'atari2600',
+    'Arcade': 'arcade',
     'NEC TurboGrafx-16/SuperGrafx/PC Engine': 'pce',
     'NEC PC-FX': 'pcfx',
     'SNK NeoGeo Pocket (Color)': 'ngp',
     'Bandai WonderSwan (Color)': 'ws',
     'ColecoVision': 'coleco',
-    'Commodore 64': 'vice_x64',
+    'Commodore 64': 'vice_x64sc',
+    'Commodore 128': 'vice_x128',
+    'Commodore VIC20': 'vice_xvic',
+    'Commodore Plus/4': 'vice_xplus4',
+    'Commodore PET': 'vice_xpet',
 };
 
 function getAspectRatio(core) {
