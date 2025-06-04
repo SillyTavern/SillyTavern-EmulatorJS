@@ -361,18 +361,38 @@ async function setupCommentWorker(frameElement) {
         return console.log('provideComment: no chat selected, skipping');
     }
 
+    if ('ImageCapture' in window === false) {
+        toastr.error('Your browser does not support ImageCapture API. Please use a different browser.', 'EmulatorJS');
+        return;
+    }
+
     try {
         // Wait for the emulator object and its canvas to be initialized
         await waitUntilCondition(() => frameElement.contentWindow['EJS_emulator']?.canvas, 5000);
         const emulatorObject = frameElement.contentWindow['EJS_emulator'];
         const emulatorCanvas = /** @type {HTMLCanvasElement} */ (emulatorObject?.canvas);
 
-        if (emulatorCanvas?.constructor?.name !== 'HTMLCanvasElement') {
+        if (!emulatorCanvas) {
             throw new Error('Failed to get the emulator canvas.');
         }
 
+        // Capture the emulator canvas at 1 FPS
+        const stream = emulatorCanvas.captureStream(1);
+        const [videoTrack] = stream.getVideoTracks();
+
+        if (!videoTrack) {
+            throw new Error('Failed to get the video track.');
+        }
+
         // Create an image capture object
+        const imageCapture = new window.ImageCapture(videoTrack);
         const updateMs = extension_settings.emulatorjs.commentInterval * 1000;
+
+        // If the video track is ended, stop the worker
+        videoTrack.addEventListener('ended', () => {
+            clearTimeout(commentTimer);
+            return console.log('provideComment: video ended, stopping comment worker.');
+        });
 
         // If the chat is changed, stop the worker
         eventSource.once(event_types.CHAT_CHANGED, () => {
@@ -380,7 +400,7 @@ async function setupCommentWorker(frameElement) {
             return console.log('provideComment: chat changed, stopping comment worker.');
         });
 
-        const shouldStopWorker = () => extension_settings.emulatorjs.commentInterval === 0;
+        const shouldStopWorker = () => videoTrack.readyState === 'ended' || extension_settings.emulatorjs.commentInterval === 0;
 
         const doUpdate = async () => {
             try {
@@ -401,19 +421,21 @@ async function setupCommentWorker(frameElement) {
                     return console.log('provideComment: emulator paused');
                 }
 
-                // Make sure the canvas dimensions match the emulator canvas
-                if (canvas.width !== emulatorCanvas.width || canvas.height !== emulatorCanvas.height) {
-                    console.debug(`provideComment: resizing canvas to match emulator canvas (${emulatorCanvas.width}x${emulatorCanvas.height})`);
-                    canvas.width = emulatorCanvas.width;
-                    canvas.height = emulatorCanvas.height;
-                }
+                // Grab a frame from the video track
+                console.debug('provideComment: grabbing frame');
+                const bitmap = await imageCapture.grabFrame();
 
                 // Draw frame to canvas
                 console.debug('provideComment: drawing frame to canvas');
+                if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
+                    console.debug(`provideComment: resizing canvas to ${bitmap.width}x${bitmap.height}`);
+                    canvas.width = bitmap.width;
+                    canvas.height = bitmap.height;
+                }
                 const context = canvas.getContext('2d');
                 // Ensure the pixels stay crisp
                 context.imageSmoothingEnabled = false;
-                context.drawImage(emulatorCanvas, 0, 0, canvas.width, canvas.height);
+                context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
                 // Convert to base64 PNG string
                 console.debug('provideComment: converting canvas to base64');
@@ -428,7 +450,7 @@ async function setupCommentWorker(frameElement) {
                 // If the video track is ended, stop the worker
                 if (shouldStopWorker()) {
                     clearTimeout(commentTimer);
-                    console.debug('provideComment: comments disabled, stopping comment worker.');
+                    console.debug('provideComment: video ended, stopping comment worker.');
                 } else {
                     // Schedule next update
                     commentTimer = setTimeout(doUpdate, updateMs);
@@ -496,7 +518,7 @@ async function startEmulator(gameId) {
 
     const slug = 'emulatorjs-frame-' + getSlug();
     const context = getContext();
-    const commentsEnabled = extension_settings.emulatorjs.commentInterval > 0;
+    const commentsEnabled = extension_settings.emulatorjs.commentInterval > 0 && !!window.ImageCapture;
     const coreName = getCoreName(game.core);
     context.sendSystemMessage('generic', slug);
 
@@ -588,6 +610,7 @@ jQuery(async () => {
                 <div class="flex-container">
                     <label for="emulatorjs_comment_interval">Comment Interval <small>(in seconds, 0 = disabled)</small></label>
                     <small>
+                        Your browser must support <a href="https://developer.mozilla.org/en-US/docs/Web/API/ImageCapture#browser_compatibility" target="_blank">ImageCapture</a>.
                         A supported Chat Completion model with image inlining enabled or captioning extension with multimodal API chosen is required.
                     </small>
                     <input id="emulatorjs_comment_interval" type="number" class="text_pole wide100p" value="0" min="0" step="10" max="6000" />

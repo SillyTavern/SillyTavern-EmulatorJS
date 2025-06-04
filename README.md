@@ -54,8 +54,9 @@ With the power of multimodal models, your AI bots can see your gameplay and prov
 
 1. Latest version of SillyTavern.
 2. Latest update of EmulatorJS extension.
-3. (If image inlining is enabled. Recommended) Chat Completion API key with a supported model.
-4. (If image inlining is disabled) Multimodal captioning extension enabled and configured.
+3. A browser that supports [ImageCapture](https://developer.mozilla.org/en-US/docs/Web/API/ImageCapture#browser_compatibility). Tested on desktop Chrome. Firefox requires to enable it with config. Safari won't work.
+4. (If image inlining is enabled. Recommended) Chat Completion API key with a supported model.
+5. (If image inlining is disabled) Multimodal captioning extension enabled and configured.
 
 ### How to enable
 
