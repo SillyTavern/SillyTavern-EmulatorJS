@@ -169,9 +169,9 @@ async function provideComment(base64Img) {
     if (ttsAudio && ttsAudio instanceof HTMLAudioElement && !ttsAudio.paused) {
         try {
             console.log('provideComment: waiting for TTS audio to finish');
-            await waitUntilCondition(() => ttsAudio.paused, 20000);
+            await waitUntilCondition(() => ttsAudio.paused, 30000);
         } catch {
-            console.log('provideComment: TTS audio did not finish in 20 seconds, giving up');
+            console.log('provideComment: TTS audio did not finish in 30 seconds, giving up');
         }
     }
 
@@ -365,9 +365,9 @@ async function setupCommentWorker(frameElement) {
         // Wait for the emulator object and its canvas to be initialized
         await waitUntilCondition(() => frameElement.contentWindow['EJS_emulator']?.canvas, 5000);
         const emulatorObject = frameElement.contentWindow['EJS_emulator'];
-        const emulatorCanvas = emulatorObject?.canvas;
+        const emulatorCanvas = /** @type {HTMLCanvasElement} */ (emulatorObject?.canvas);
 
-        if (emulatorCanvas instanceof HTMLCanvasElement === false) {
+        if (emulatorCanvas?.constructor?.name !== 'HTMLCanvasElement') {
             throw new Error('Failed to get the emulator canvas.');
         }
 
@@ -410,11 +410,10 @@ async function setupCommentWorker(frameElement) {
 
                 // Draw frame to canvas
                 console.debug('provideComment: drawing frame to canvas');
-                const emulatorCanvasContext = emulatorCanvas.getContext('2d');
                 const context = canvas.getContext('2d');
                 // Ensure the pixels stay crisp
                 context.imageSmoothingEnabled = false;
-                context.drawImage(emulatorCanvasContext, 0, 0, canvas.width, canvas.height);
+                context.drawImage(emulatorCanvas, 0, 0, canvas.width, canvas.height);
 
                 // Convert to base64 PNG string
                 console.debug('provideComment: converting canvas to base64');
