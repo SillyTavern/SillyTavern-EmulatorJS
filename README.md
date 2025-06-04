@@ -25,47 +25,12 @@ Limitations:
 - AI can't play the game with you as a second player (yet).
 - No built-in ROMs. But you can find them [anywhere](https://archive.org/details/ni-romsets).
 
-## NEW! AI Streaming mode
-
-With the power of multimodal models, your AI bots can now see your gameplay and provide witty in-character comments.
-
-### Requirements
-
-1. Latest version of SillyTavern.
-2. Latest update of EmulatorJS extension.
-3. A browser that supports [ImageCapture](https://developer.mozilla.org/en-US/docs/Web/API/ImageCapture#browser_compatibility). Tested on desktop Chrome. Firefox requires to enable it with config. Safari won't work.
-4. (If image inlining is disabled) Multimodal captioning extension enabled and configured.
-5. (If image inlining is enabled. Recommended) Chat Completion API key with a supported model.
-
-### How to enable
-
-1. Make sure you set the interval of providing comments in the EmulatorJS extension settings. This setting defines how often the character is queried for comments using a snap of your current gameplay. A value of 0 indicates that no comments are provided.
-2. Select a character chat and launch the game. For the best performance, make sure that the ROM file is properly named so that AI can have more background context.
-3. Start playing as you normally would. The vision model will be queried periodically to write a comment based on the latest screenshot it "sees".
-
-### Why I'm not seeing any comments?
-
-Comments are temporarily paused (interval step skipped) if:
-
-1. Emulator is paused (with a pause button, not in-game).
-2. The browser window is out of focus.
-3. The user input area is not empty. This is to let you type your reply in peace.
-4. Another reply generation is currently in progress.
-5. TTS voice is being read aloud. Comment is held off (10 seconds maximum) until it finishes, but not skipped.
-
-Other common issues:
-
-1. Make sure you've set a commenting interval before launching the game.
-2. Make sure you have set an OpenAI key and there are no errors in the ST server console.
-
-Still doesn't work? Send us your browser debug console logs (press F12).
-
-### Settings
-
-1. Caption template - a prompt used to describe the in-game screenshot. `{{game}}` and `{{core}}` additional macro are supported.
-2. Comment template - a prompt used to write a comment based on the generated caption. `{{game}}`, `{{core}}`, `{{caption}}` additional macro are supported. For image inlining mode, `{{caption}}` is replaced with `see included image`.
-
 ## Installation and Usage
+
+### Prerequisites
+
+- Latest release version of SillyTavern.
+- ROM and/or BIOS files downloaded from the net.
 
 ### Installation
 
@@ -78,12 +43,48 @@ Install using SillyTavern's third-party extensions installer using this link:
 - Open the "EmulatorJS" extension menu.
 - Click "Add ROM file".
 - Select the game file to add. Input the name and core (if it wasn't auto-detected).
+- Some cores (e.g. PlayStation) require you to provide a BIOS file. See the [documentation](https://emulatorjs.org/docs4devs/cores) to find out what are the necessary files.
 - Click the "Play" button in the list or launch via the wand menu.
 
-## Prerequisites
+## AI Commentary mode
 
-- Latest release version of SillyTavern.
-- ROM files downloaded from the net.
+With the power of multimodal models, your AI bots can see your gameplay and provide witty in-character comments.
+
+### Requirements
+
+1. Latest version of SillyTavern.
+2. Latest update of EmulatorJS extension.
+3. (If image inlining is enabled. Recommended) Chat Completion API key with a supported model.
+4. (If image inlining is disabled) Multimodal captioning extension enabled and configured.
+
+### How to enable
+
+1. Make sure you set the interval of providing comments in the EmulatorJS extension settings. This setting defines how often the character is queried for comments using a screenshot of your current gameplay. A value of 0 indicates that no comments are provided.
+2. Select a character chat and launch the game. For the best performance, make sure that the ROM file is properly named so that AI can have more background context.
+3. Start playing as you normally would. The vision model will be queried periodically to write a comment based on the latest screenshot it "sees".
+
+### Why I'm not seeing any comments?
+
+Comments are temporarily paused (interval step skipped) if:
+
+1. Emulator is paused (with a pause option, not in-game).
+2. The browser window is out of focus.
+3. The user input area is not empty. This is to let you type your reply in peace.
+4. Another reply generation is currently in progress.
+5. TTS voice is being read aloud. Comment is held off (30 seconds maximum) until it finishes, but not skipped.
+6. A character card or group is currently open. Comment mode is disabled when starting the game from a welcome screen.
+
+Other common issues:
+
+1. Make sure you've set a commenting interval before launching the game.
+2. Make sure you have set an API key and there are no errors in the ST server console.
+
+Still doesn't work? Send us your browser debug console logs (press F12).
+
+### Settings
+
+1. Caption template - a prompt used to describe the in-game screenshot. `{{game}}` and `{{core}}` additional macro are supported.
+2. Comment template - a prompt used to write a comment based on the generated caption. `{{game}}`, `{{core}}`, `{{caption}}` additional macro are supported. For image inlining mode, `{{caption}}` is replaced with `see included image`.
 
 ## Support and Contributions
 
